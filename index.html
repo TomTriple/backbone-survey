@@ -11,31 +11,97 @@
 
 <script type="text/javascript">
 
-var Question = Backbone.Model.extend({
-    defaults: {
-        overviewTitle: ""
-    }
-})
+
+    var Question = Backbone.Model.extend({
+        defaults: {
+            title: "",
+            done: false,
+            sort: -1
+        }
+    })
+
+    var Questions = Backbone.Collection.extend({
+        ix: 0,
+        model: Question,
+        comparator: function(question) {
+            return question.get("sort")
+        },
+        current: function() {
+            return this.at(this.ix)
+        },
+        lastQuestion: function() {
+            return this.ix + 1 === this.length
+        }
+    })
+
+    var PanelView = Backbone.View.extend({
+        initialize: function() {
+            var th = this
+            this.collection.bind("change:done", function(value) {
+                th.render()
+            })
+            this.render()
+        },
+        events: {
+            "click a.weiter": "weiter"
+        },
+        weiter: function() {
+            if(this.collection.lastQuestion()) {
+                this.collection.ix += 1
+                this.renderOverview() 
+            } else {
+                var current = this.collection.current()
+                this.collection.ix += 1
+                current.set({done: true})
+                router.navigate("/question/" + this.collection.ix, true)
+            }
+        },
+        render: function() {
+            var current = this.collection.current() 
+            var index = this.collection.ix
+            $("#questions span").html("Frage " + (index+1) + "/" + this.collection.length)
+            $("#questions h1").html(current.get("title"))
+            $("#answers").html(_.template($("#template-a" + index).html()))
+            this.renderOverview()
+        },
+        renderOverview: function() {
+            $("#overview ul").html(_.template($("#template-overview").html(), {index: this.collection.ix, questions: this.collection.toJSON()}))
+        } 
+    })
+
+    var Router = Backbone.Router.extend({
+        routes: {
+            "/question/:id": "question",
+            "/umfrage-starten": "umfrageStarten"
+        },
+        question: function(id) {
+            id -= 1
+            if(id == 0) {
+                $("#umfrage-starten").hide()
+                $("#panel").show()
+                var questions = new Questions([
+                    new Question({title: "Ihr Wohnort?", sort: 3}),
+                    new Question({title: "Ihr Alter?",  sort: 2}),
+                    new Question({title: "Ihr Geschlecht?", sort: 1})
+                ])
+
+                var panelView = new PanelView({el: $("#panel"), collection: questions})
+            }
+        },
+        umfrageStarten: function() {
+            $("#start").hide()
+            $("#umfrage-starten").show()
+        }
+    })
+
+    var router
+    $(function() {
+        router = new Router()
+        Backbone.history.start()
+    })
 
 
 
-var Questions = Backbone.Collection.extend({
-    model: Question,
-    comparator: function(question) {
-        return question.get("cid")
-    }
-})
-
-var questions = new Questions([
-    new Question({overviewTitle: "Ihr Geschlecht"}),
-    new Question({overviewTitle: "Ihr Alter"}),
-    new Question({overviewTitle: "Ihr Wohnort"})
-])
-
-
-$.ready(function() {
-    
-})
 
 </script>
 
@@ -48,7 +114,15 @@ body {
     color:#333;
     font-size: 18px;
 }
+#umfrage-starten {
+    display: none;
+    margin:0 auto;
+}
+#start {
+    margin:0 auto;
+}
 #panel {
+    display: none;
     width: 1000px;
     height:500px;
     margin: 0 auto;
@@ -75,14 +149,14 @@ body {
 }
 #questions h1 {
     display: inline-block;
-    font-size:1.6em;
+    font-size:1.8em;
     text-shadow: 1px 0px 1px #ccc;
     font-variant: small-caps; 
     color:#333;
     margin:0px;
     padding:0px;
 }
-#questions a {
+a.weiter {
     display: inline-block;
     padding: 2px 12px 2px 12px;
     -moz-border-radius: 3px;
@@ -105,36 +179,64 @@ h2 {
 }
 #overview ul a {
     display: block;
-    font-size:0.9em;
+    font-size:0.7em;
     text-decoration: none;
     color:#ccc;
     padding:5px 2px 5px 2px;
-    border-top: 1px solid #ccc;
+    border-top: 1px solid #999;
 }
 #overview ul li:last-child a {
-    border-bottom: 1px solid #ccc;
+    border-bottom: 1px solid #999;
 }
 </style> 
 
+<script type="text/template" id="template-a0">
+    <input type="radio" id="q1_geschlecht_w" name="q1_geschlecht" value="w" /> <label for="q1_geschlecht_w">Weiblich</label> <br/>
+    <input type="radio" id="q1_geschlecht_m" name="q1_geschlecht" value="m" /> <label for="q1_geschlecht_m">Männlich</label>
+</script>
+
+<script type="text/template" id="template-a1">
+    Frage 2
+</script>
+
+
+<script type="text/template" id="template-a2">
+    Frage 3
+</script>
+
+<script type="text/template" id="template-overview">
+    <% _.each(questions, function(question) { %>
+    <% if(question.done) { %>
+        <li><a href="#"><%= "√ " + question.sort + ". " + question.title %></a></li>
+    <% } else { %>
+        <li><a href="#" style="font-weight:<%= (index+1) === question.sort ? "bold" : "normal" %>"><%= "→ " + question.sort + ". " + question.title %></a></li>
+    <% } %>
+    <% }); %>
+</script>
+
 </head>
     <body>
+    <div id="start">
+        Herzlich Willkommen <a href="#/umfrage-starten">Zum Umfrage</a>
+    </div>
+    <div id="umfrage-starten">
+        Nehmen Sie sich Zeit... bla bla <a href="#/question/1">Umfrage jetzt starten</a>
+    </div>
     <div id="panel">
         <div id="questions">
-            <span>Frage 1</span>
-            <h1>Ihr Geschlecht?</h1>
-            <div id="answers">
-                <input type="radio" id="q1_geschlecht_w" name="q1_geschlecht" value="w" /> <label for="q1_geschlecht_w">Weiblich</label> <br/>
-                <input type="radio" id="q1_geschlecht_m" name="q1_geschlecht" value="m" /> <label for="q1_geschlecht_m">Männlich</label>
-            </div>
-            <a href="#">Weiter →</a>
+            <span></span>
+            <h1></h1>
+            <div id="answers"></div>
+            <a href="#" class="weiter">Weiter →</a>
         </div>
         <div id="overview">
             <h2>Fragen – Überblick</h2>
             <ul>
-                <li><a href="#">Ihr Geschlecht</a></li>
-                <li><a href="#">Ihr Alter</a></li>
             </ul>
         </div>
     </div>
     </body>
+
+    
 </html>
+

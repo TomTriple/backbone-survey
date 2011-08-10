@@ -83,7 +83,8 @@
         routes: {
             "/question/:id": "question",
             "/umfrage-starten": "umfrageStarten",
-            "/ende": "ende"
+            "/ende": "ende",
+            "/danke": "danke"
         },
         question: function(id) {
             id -= 1
@@ -128,8 +129,13 @@
                 var result = questions.reduce(function(acc, it) { return acc + it.get("serializedResult")+"&" }, "")
                 $.post("/save.php", result, function(xxx) {
                     alert(xxx)
+                    router.navigate("/danke", true)
                 })
             })
+        },
+        danke: function() {
+            $("#ende").hide()
+            $("#danke").show()
         }
     })
 
@@ -154,16 +160,21 @@ body {
     color:#333;
     font-size: 18px;
 }
-#umfrage-starten {
-    display: none;
+a {
+    display: inline-block;
+    color: #ffc;
+    text-decoration: none;
+    border-bottom: 1px solid #ffc;
+}
+
+#ende, #danke, #start, #umfrage-starten {
+    display: none; 
     margin:0 auto;
+    width: 500px;
+    text-align: center;
+    margin-top: 100px;
 }
-#start {
-    margin:0 auto;
-}
-#ende {
-    display: none;
-}
+
 #panel {
     display: none;
     width: 1000px;
@@ -416,11 +427,18 @@ h2 {
 
 </head>
     <body>
-        <div id="start">
-            Herzlich Willkommen <a href="#/umfrage-starten">Zum Umfrage</a>
+        <div id="start" style="display:block;">
+            Herzlich Willkommen bei der Umfrage zu "COCEO – the way you like it"! <br />
+            <span style="font-size:0.7em;color:#999">
+                Diese Umfrage ist Teil der Bachelorarbeit von Sarah Berthold
+            </span>
+            <br /><br /><br /><br />
+            <a href="#/umfrage-starten">Zum Umfrage</a>
         </div>
         <div id="umfrage-starten">
-            Nehmen Sie sich Zeit... bla bla <a href="#/question/1">Umfrage jetzt starten</a>
+            Eines vorneweg: Viele Dank bereits im voraus für Deine Mithilfe! 
+             <br /><br /><br /><br />
+            <a href="#/question/1">Umfrage jetzt starten</a>
         </div>
         <div id="panel">
             <div id="questions">
@@ -438,8 +456,12 @@ h2 {
             </div>
         </div>
         <div id="ende">
-            Vielen Dank für Ihre Antworten, jetzt fehlt nur noch ein letzter Schritt: 
+            Vielen Dank für Deine Antworten, jetzt fehlt nur noch ein letzter Schritt:
+            <br /><br /><br /><br />
             <a href="#" class="transfer" style="margin-left: 25px;">Fragebogen speichern</a>
+        </div>
+        <div id="danke">
+            So, das war´s – vielen Dank für Deine Mithilfe! 
         </div>
     </body>
 </html>

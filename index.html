@@ -11,12 +11,15 @@
 
 <script type="text/javascript">
 
+(function() {
 
     var Question = Backbone.Model.extend({
         defaults: {
             title: "",
             done: false,
-            sort: -1
+            sort: -1,
+            templateString: undefined,
+            serializedResult: ""
         }
     })
 
@@ -46,9 +49,11 @@
             "click a.weiter": "weiter"
         },
         weiter: function() {
+            this.collection.current().set({serializedResult: $("#resultsform").serialize(), silent: true})
             if(this.collection.lastQuestion()) {
                 this.collection.ix += 1
-                this.renderOverview() 
+                this.renderOverview()
+                router.navigate("/ende", true)
             } else {
                 var current = this.collection.current()
                 this.collection.ix += 1
@@ -57,32 +62,56 @@
             }
         },
         render: function() {
-            var current = this.collection.current() 
+            var current = this.collection.current()
             var index = this.collection.ix
             $("#questions span").html("Frage " + (index+1) + "/" + this.collection.length)
             $("#questions h1").html(current.get("title"))
-            $("#answers").html(_.template($("#template-a" + index).html()))
+
+            if(current.get("templateString") === undefined) {
+                current.set({templateString: _.template($("#template-a" + index).html()).call(), silent: true})
+            }
+            $("#answers").html(current.get("templateString"))
+
             this.renderOverview()
         },
         renderOverview: function() {
             $("#overview ul").html(_.template($("#template-overview").html(), {index: this.collection.ix, questions: this.collection.toJSON()}))
-        } 
+        }
     })
 
     var Router = Backbone.Router.extend({
         routes: {
             "/question/:id": "question",
-            "/umfrage-starten": "umfrageStarten"
+            "/umfrage-starten": "umfrageStarten",
+            "/ende": "ende"
         },
         question: function(id) {
             id -= 1
             if(id == 0) {
                 $("#umfrage-starten").hide()
                 $("#panel").show()
-                var questions = new Questions([
-                    new Question({title: "Ihr Wohnort?", sort: 3}),
+                questions = new Questions([
+                    new Question({title: "Ihr Geschlecht?", sort: 1}),
                     new Question({title: "Ihr Alter?",  sort: 2}),
-                    new Question({title: "Ihr Geschlecht?", sort: 1})
+                    new Question({title: "Ihr Wohnort?", sort: 3}),
+                    new Question({title: "Ihr Beruf?", sort: 4}),
+                    new Question({title: "Sind Sie Internet-User?", sort: 5}),
+                    new Question({title: "Gastronomie-Nutzung?", sort: 6}),
+                    new Question({title: "Wie aufgeschlossen sind Sie gegenüber Neuem?", sort: 7}),
+                    new Question({title: "Haben Sie einen Coffee-Shop (z.B: McCafé, Strabucks, CoffeeFellows usw.) in Ihrer Nähe?", sort: 8}),
+                    new Question({title: "Wie würden Sie Ihren Kaffee-Konsum beschreiben?", sort: 9}),
+                    new Question({title: "Mit welchen Speisen kombinieren Sie Kaffee am liebsten?", sort: 10}),
+                    new Question({title: "Welche Möglichkeiten haben Sie im Alltag Kaffee zu konsumieren?", sort: 11}),
+                    new Question({title: "Wie viel Zeit sind Sie bereit für eine Online-Bestellung maximal aufzubringen?", sort: 12}),
+                    new Question({title: "Wie routiniert ist Ihr Alltags-Ablauf? (1 sehr routiniert, 5 jeder Tag anders)", sort: 13}),
+                    new Question({title: "Wie wichtig sind Ihnen Hintergrund-Informationen zu bestellten Produkten? (1 sehr wichtig, 5 unwichtig)", sort: 14}),
+                    new Question({title: "Nutzen Sie ein Smartphone?", sort: 15}),
+                    new Question({title: "Wie wichtig ist es Ihnen die Bestandteile Ihres Kaffees selbst zu wählen? (1 sehr wichtig, 5 unwichtig)", sort: 16}),
+                    new Question({title: "Wie gestalten Sie Pausen in Ihrem Alltag/Job?", sort: 17}),
+                    new Question({title: "Sie wollen sich nicht selbst etwas zubereiten, welchen Dienst nehmen Sie in Anspruch?", sort: 18}),
+                    new Question({title: "Aus welchem Grund trinken Sie Kaffee?", sort: 19}),
+                    new Question({title: "Haben Sie Interesse an einer Kaffee-Probe (analog zur Weinprobe)?", sort: 20}),
+                    new Question({title: "Würden Sie unter Zeitdruck per Schnellbestellung (z.B. wie “one click”) online etwas bestellen?", sort: 21}),
                 ])
 
                 var panelView = new PanelView({el: $("#panel"), collection: questions})
@@ -91,14 +120,25 @@
         umfrageStarten: function() {
             $("#start").hide()
             $("#umfrage-starten").show()
+        },
+        ende: function() {
+            $("#panel").hide()
+            $("#ende").show()
+            $("#ende a.transfer").click(function(e) {
+                var result = questions.reduce(function(acc, it) { return acc + it.get("serializedResult")+"&" }, "")
+                $.post("/save.php", result, function(xxx) {
+                    alert(xxx)
+                })
+            })
         }
     })
 
-    var router
     $(function() {
         router = new Router()
         Backbone.history.start()
     })
+
+})();
 
 
 
@@ -121,6 +161,9 @@ body {
 #start {
     margin:0 auto;
 }
+#ende {
+    display: none;
+}
 #panel {
     display: none;
     width: 1000px;
@@ -130,12 +173,13 @@ body {
 #overview {
     float:left;
     width: 210px;
-    padding: 50px 0px 0px 20px;
+    padding: 20px 0px 0px 20px;
 }
 #questions {
     float:left;
+    position:relative;
     width: 750px;
-    min-height:500px;
+    min-height:550px;
     padding: 10px;
 }
 #answers {
@@ -150,23 +194,34 @@ body {
 #questions h1 {
     display: inline-block;
     font-size:1.8em;
-    text-shadow: 1px 0px 1px #ccc;
+    text-shadow: 2px 0px 1px #B2B6BD;
     font-variant: small-caps; 
     color:#333;
     margin:0px;
     padding:0px;
 }
-a.weiter {
+a.weiter, a.transfer {
     display: inline-block;
-    padding: 2px 12px 2px 12px;
+    padding: 8px 16px 8px 16px;
     -moz-border-radius: 3px;
     -webkit-border-radius: 3px;
-    text-shadow: 1px 0px 2px #fff;
+    text-shadow: 2px 0px 1px #fff;
     text-decoration: none; 
     text-align: center; 
     background: #ffc;
     color:#333;
 }
+a.weiter {
+    position:absolute;
+    bottom:0px;
+}
+a.weiter:hover, a.transfer:hover {
+    background: #FFF782;
+}
+a.weiter:active, a.transfer:active {
+    background: #FDF030;
+}
+
 
 h2 {
     font-size: 1em;
@@ -177,16 +232,24 @@ h2 {
     margin: 0px;
     padding: 0px;
 }
-#overview ul a {
+#overview ul span {
     display: block;
     font-size:0.7em;
     text-decoration: none;
-    color:#ccc;
+    color:#999;
     padding:5px 2px 5px 2px;
     border-top: 1px solid #999;
 }
 #overview ul li:last-child a {
     border-bottom: 1px solid #999;
+}
+#answers strong {
+    display:block;
+    margin-top:20px;
+}
+#answers textarea {
+    width:600px;
+    height:100px;
 }
 </style> 
 
@@ -196,47 +259,188 @@ h2 {
 </script>
 
 <script type="text/template" id="template-a1">
-    Frage 2
+    <input type="radio" id="q2_alter_1" name="q2_alter" value="unter18" /> <label for="q2_alter_1">Unter 18</label> <br />
+    <input type="radio" id="q2_alter_2" name="q2_alter" value="18bis29" /> <label for="q2_alter_2">18 – 29</label> <br />
+    <input type="radio" id="q2_alter_3" name="q2_alter" value="30bis45" /> <label for="q2_alter_3">30 – 45</label> <br />
+    <input type="radio" id="q2_alter_4" name="q2_alter" value="46bis60" /> <label for="q2_alter_4">46 – 60</label> <br />
+    <input type="radio" id="q2_alter_5" name="q2_alter" value="ueber60" /> <label for="q2_alter_5">Über 60</label> <br />
 </script>
 
 
 <script type="text/template" id="template-a2">
-    Frage 3
+    <input type="radio" id="q3_wohnort_1" name="q3_wohnort" value="Großstadt" /> <label for="q3_wohnort_1">Großstadt</label> <br/>
+    <input type="radio" id="q3_wohnort_2" name="q3_wohnort" value="Kleinstadt" /> <label for="q3_wohnort_2">Kleinstadt</label> <br/>
+    <input type="radio" id="q3_wohnort_3" name="q3_wohnort" value="Dorf" /> <label for="q3_wohnort_3">Dorf</label> <br/>
+</script>
+
+<script type="text/template" id="template-a3">
+    <input type="radio" id="q4_beruf_1" name="q4_beruf" value="Schüler" /> <label for="q4_beruf_1">Schüler</label> <br/>
+    <input type="radio" id="q4_beruf_2" name="q4_beruf" value="Student" /> <label for="q4_beruf_2">Student</label> <br/>
+    <input type="radio" id="q4_beruf_3" name="q4_beruf" value="Auszubildende/r" /> <label for="q4_beruf_3">Auszubildende/r</label> <br/>
+    <input type="radio" id="q4_beruf_4" name="q4_beruf" value="Selbständig" /> <label for="q4_beruf_4">Selbständig</label> <br/>
+    <input type="radio" id="q4_beruf_5" name="q4_beruf" value="LeitenderAngestellter" /> <label for="q4_beruf_5">Leitender Angestellter</label> <br/>
+    <input type="radio" id="q4_beruf_6" name="q4_beruf" value="Beamter" /> <label for="q4_beruf_6">Beamter</label> <br/>
+    <input type="radio" id="q4_beruf_7" name="q4_beruf" value="OhneBeruf" /> <label for="q4_beruf_7">Ohne Beruf</label> <br/>
+</script>
+
+<script type="text/template" id="template-a4">
+    <input type="radio" id="q5_internet_1" name="q5_internet" value="täglich" /> <label for="q5_internet_1">Täglich</label> <br/>
+    <input type="radio" id="q5_internet_2" name="q5_internet" value="MehrmalsDieWoche" /> <label for="q5_internet_2">Mehrmals die Woche</label> <br/>
+    <input type="radio" id="q5_internet_3" name="q5_internet" value="MehrmalsImMonat" /> <label for="q5_internet_3">Mehrmals im Monat</label> <br/>
+    <input type="radio" id="q5_internet_4" name="q5_internet" value="Selten" /> <label for="q5_internet_4">Selten</label> <br/>
+    <strong>Grund der Nutzung des Internet?</strong>
+    <textarea name="q5_internet_grund"></textarea>
+</script>
+
+<script type="text/template" id="template-a5">
+    <input type="radio" id="q6_gastronomie_1" name="q6_gastronomie" value="täglich" /> <label for="q6_gastronomie_1">Täglich</label> <br/>
+    <input type="radio" id="q6_gastronomie_2" name="q6_gastronomie" value="MehrmalsDieWoche" /> <label for="q6_gastronomie_2">Mehrmals die Woche</label> <br/>
+    <input type="radio" id="q6_gastronomie_3" name="q6_gastronomie" value="MehrmalsImMonat" /> <label for="q6_gastronomie_3">Mehrmals im Monat</label> <br/>
+    <input type="radio" id="q6_gastronomie_4" name="q6_gastronomie" value="Selten" /> <label for="q6_gastronomie_4">Selten</label> <br/>
+</script>
+
+<script type="text/template" id="template-a6">
+    <input type="radio" id="q7_aufgeschlossen_1" name="q7_aufgeschlossen" value="1" /> <label for="q7_aufgeschlossen_1">1</label> <br/>
+    <input type="radio" id="q7_aufgeschlossen_2" name="q7_aufgeschlossen" value="2" /> <label for="q7_aufgeschlossen_2">2</label> <br/>
+    <input type="radio" id="q7_aufgeschlossen_3" name="q7_aufgeschlossen" value="3" /> <label for="q7_aufgeschlossen_3">3</label> <br/>
+    <input type="radio" id="q7_aufgeschlossen_4" name="q7_aufgeschlossen" value="4" /> <label for="q7_aufgeschlossen_4">4</label> <br/>
+    <input type="radio" id="q7_aufgeschlossen_5" name="q7_aufgeschlossen" value="5" /> <label for="q7_aufgeschlossen_5">5</label> <br/>
+</script>
+
+<script type="text/template" id="template-a7">
+    <strong>Wenn ja, Wie regelmäßig nutzen Sie diesen? (1 sehr relemäßig, 5 selten)</strong>
+    <input type="radio" id="q8_nah_ja1" name="q8_nah" value="ja_1" /> <label for="q8_nah_ja1">1</label><br/>
+    <input type="radio" id="q8_nah_ja2" name="q8_nah" value="ja_2" /> <label for="q8_nah_ja2">2</label><br/>
+    <input type="radio" id="q8_nah_ja3" name="q8_nah" value="ja_3" /> <label for="q8_nah_ja3">3</label><br/>
+    <input type="radio" id="q8_nah_ja4" name="q8_nah" value="ja_4" /> <label for="q8_nah_ja4">4</label><br/>
+    <input type="radio" id="q8_nah_ja5" name="q8_nah" value="ja_5" /> <label for="q8_nah_ja5">5</label><br/>
+
+    <strong>Wenn nein, Hätten Sie gerne ein solches Angebot? (1 unbedingt, 5 nein)</strong>
+    <input type="radio" id="q8_nah_nein1" name="q8_nah" value="nein_1" /> <label for="q8_nah_nein1">1</label><br/>
+    <input type="radio" id="q8_nah_nein2" name="q8_nah" value="nein_2" /> <label for="q8_nah_nein2">2</label><br/>
+    <input type="radio" id="q8_nah_nein3" name="q8_nah" value="nein_3" /> <label for="q8_nah_nein3">3</label><br/>
+    <input type="radio" id="q8_nah_nein4" name="q8_nah" value="nein_4" /> <label for="q8_nah_nein4">4</label><br/>
+    <input type="radio" id="q8_nah_nein5" name="q8_nah" value="nein_5" /> <label for="q8_nah_nein5">5</label><br/>
+</script>
+
+<script type="text/template" id="template-a8">
+    <input type="radio" id="q9_konsum_1" name="q9_konsum" value="KeinKaffeeTrinker" /> <label for="q9_konsum_1">Kein Kaffee-Trinker</label> <br/>
+    <input type="radio" id="q9_konsum_2" name="q9_konsum" value="1bis3" /> <label for="q9_konsum_2">1 – 3 täglich</label> <br/>
+    <input type="radio" id="q9_konsum_3" name="q9_konsum" value="ÖfterAls1bis3" /> <label for="q9_konsum_3">Öfter</label> <br/>
+    <input type="radio" id="q9_konsum_4" name="q9_konsum" value="Seltener" /> <label for="q9_konsum_4">Seltener</label> <br/>
+</script>
+
+<script type="text/template" id="template-a9">
+    <textarea name="q10_kombination"></textarea>
+</script>
+
+<script type="text/template" id="template-a10">
+    <textarea name="q11_alltag"></textarea>
+    <strong>Wie zufrieden sind Sie mit diesen Möglichkeiten?</strong>
+    <input type="radio" id="q11_alltag_zufrieden_1" name="q11_alltag_zufrieden" value="SehrZufrieden" /> <label for="q11_alltag_zufrieden_1">Sehr zufrieden</label> <br/>
+    <input type="radio" id="q11_alltag_zufrieden_2" name="q11_alltag_zufrieden" value="Zufrieden" /> <label for="q11_alltag_zufrieden_2">Zufrieden</label> <br/>
+    <input type="radio" id="q11_alltag_zufrieden_3" name="q11_alltag_zufrieden" value="Unzufrieden" /> <label for="q11_alltag_zufrieden_3">Unzufrieden</label> <br/>    
+</script>
+
+<script type="text/template" id="template-a11">
+    <input type="radio" id="q12_bestelldauer_1" name="q12_bestelldauer" value="1Bis5Min" /> <label for="q12_bestelldauer_1">1 – 5 Minuten</label> <br/>
+    <input type="radio" id="q12_bestelldauer_2" name="q12_bestelldauer" value="5Bis10Min" /> <label for="q12_bestelldauer_2">5 – 10 Minuten</label> <br/>
+    <input type="radio" id="q12_bestelldauer_3" name="q12_bestelldauer" value="10Bis20Min" /> <label for="q12_bestelldauer_3">10 – 20 Minuten</label> <br/>
+</script>
+
+<script type="text/template" id="template-a12">
+    <input type="radio" id="q13_routine_1" name="q13_routine" value="1" /> <label for="q13_routine_1">1</label> <br/>
+    <input type="radio" id="q13_routine_2" name="q13_routine" value="2" /> <label for="q13_routine_2">2</label> <br/>
+    <input type="radio" id="q13_routine_3" name="q13_routine" value="3" /> <label for="q13_routine_3">3</label> <br/>
+    <input type="radio" id="q13_routine_4" name="q13_routine" value="4" /> <label for="q13_routine_4">4</label> <br/>
+    <input type="radio" id="q13_routine_5" name="q13_routine" value="5" /> <label for="q13_routine_5">5</label> <br/>
+</script>
+
+<script type="text/template" id="template-a13">
+    <input type="radio" id="q14_hintergrundinfos_1" name="q14_hintergrundinfos" value="1" /> <label for="q14_hintergrundinfos_1">1</label> <br/>
+    <input type="radio" id="q14_hintergrundinfos_2" name="q14_hintergrundinfos" value="2" /> <label for="q14_hintergrundinfos_2">2</label> <br/>
+    <input type="radio" id="q14_hintergrundinfos_3" name="q14_hintergrundinfos" value="3" /> <label for="q14_hintergrundinfos_3">3</label> <br/>
+    <input type="radio" id="q14_hintergrundinfos_4" name="q14_hintergrundinfos" value="4" /> <label for="q14_hintergrundinfos_4">4</label> <br/>
+    <input type="radio" id="q14_hintergrundinfos_5" name="q14_hintergrundinfos" value="5" /> <label for="q14_hintergrundinfos_5">5</label> <br/>
+</script>
+
+<script type="text/template" id="template-a14">
+    <input type="radio" id="q15_smartphone_1" name="q15_smartphone" value="ja" /> <label for="q15_smartphone_1">Ja</label> <br/>
+    <input type="radio" id="q15_smartphone_2" name="q15_smartphone" value="nein" /> <label for="q15_smartphone_2">Nein</label> <br/>
+
+    <strong>Wenn ja, was für eines?</strong>
+    <input type="text" name="q15_smartphone_typ" />
+</script>
+
+<script type="text/template" id="template-a15">
+    <input type="radio" id="q16_bestandteile_1" name="q16_bestandteile" value="1" /> <label for="q16_bestandteile_1">1</label> <br/>
+    <input type="radio" id="q16_bestandteile_2" name="q16_bestandteile" value="2" /> <label for="q16_bestandteile_2">2</label> <br/>
+    <input type="radio" id="q16_bestandteile_3" name="q16_bestandteile" value="3" /> <label for="q16_bestandteile_3">3</label> <br/>
+    <input type="radio" id="q16_bestandteile_4" name="q16_bestandteile" value="4" /> <label for="q16_bestandteile_4">4</label> <br/>
+    <input type="radio" id="q16_bestandteile_5" name="q16_bestandteile" value="5" /> <label for="q16_bestandteile_5">5</label> <br/>
+</script>
+
+<script type="text/template" id="template-a16">
+    <textarea name="q17_pausen"></textarea>
+</script>
+
+<script type="text/template" id="template-a17">
+    <textarea name="q18_dienst"></textarea>
+</script>
+
+<script type="text/template" id="template-a18">
+    <textarea name="q19_grund"></textarea>
+</script>
+
+<script type="text/template" id="template-a19">
+    <input type="radio" id="q20_kaffeeprobe_1" name="q20_kaffeeprobe" value="ja" /> <label for="q20_kaffeeprobe_1">Ja</label> <br/>
+    <input type="radio" id="q20_kaffeeprobe_2" name="q20_kaffeeprobe" value="nein" /> <label for="q20_kaffeeprobe_2">Nein</label> <br/>
+    <input type="radio" id="q20_kaffeeprobe_3" name="q20_kaffeeprobe" value="vielleicht" /> <label for="q20_kaffeeprobe_3">Vielleicht</label> <br/>
+</script>
+
+<script type="text/template" id="template-a20">
+    <input type="radio" id="q21_zeitdruck_1" name="q21_zeitdruck" value="ja" /> <label for="q21_zeitdruck_1">Ja</label> <br/>
+    <input type="radio" id="q21_zeitdruck_2" name="q21_zeitdruck" value="nein" /> <label for="q21_zeitdruck_2">Nein</label> <br/>
+    <input type="radio" id="q21_zeitdruck_3" name="q21_zeitdruck" value="vielleicht" /> <label for="q21_zeitdruck_3">Vielleicht</label> <br/>
 </script>
 
 <script type="text/template" id="template-overview">
-    <% _.each(questions, function(question) { %>
-    <% if(question.done) { %>
-        <li><a href="#"><%= "√ " + question.sort + ". " + question.title %></a></li>
-    <% } else { %>
-        <li><a href="#" style="font-weight:<%= (index+1) === question.sort ? "bold" : "normal" %>"><%= "→ " + question.sort + ". " + question.title %></a></li>
-    <% } %>
+    <% _.each(questions, function(q) { %>
+        <% if(q.done) { %>
+            <li><span style="color:#ccc;" href="#"><%= "✓ " + q.sort + ". " + (q.title.length >= 30 ? q.title.substring(0, 27)+"..." : q.title) %></span></li>
+        <% } else { %>
+            <li><span href="#" style="<%= (index+1) === q.sort ? "color:#333" : "normal" %>"><%= "→ " + q.sort + ". " + (q.title.length >= 30 ? q.title.substring(0, 27)+"..." : q.title) %></span></li>
+        <% } %>
     <% }); %>
 </script>
 
 </head>
     <body>
-    <div id="start">
-        Herzlich Willkommen <a href="#/umfrage-starten">Zum Umfrage</a>
-    </div>
-    <div id="umfrage-starten">
-        Nehmen Sie sich Zeit... bla bla <a href="#/question/1">Umfrage jetzt starten</a>
-    </div>
-    <div id="panel">
-        <div id="questions">
-            <span></span>
-            <h1></h1>
-            <div id="answers"></div>
-            <a href="#" class="weiter">Weiter →</a>
+        <div id="start">
+            Herzlich Willkommen <a href="#/umfrage-starten">Zum Umfrage</a>
         </div>
-        <div id="overview">
-            <h2>Fragen – Überblick</h2>
-            <ul>
-            </ul>
+        <div id="umfrage-starten">
+            Nehmen Sie sich Zeit... bla bla <a href="#/question/1">Umfrage jetzt starten</a>
         </div>
-    </div>
+        <div id="panel">
+            <div id="questions">
+                <span></span>
+                <h1></h1>
+                <form id="resultsform">
+                <div id="answers"></div>
+                </form>
+                <a href="#" class="weiter">Nächste Frage →</a>
+            </div>
+            <div id="overview">
+                <h2>Fragen – Überblick</h2>
+                <ul>
+                </ul>
+            </div>
+        </div>
+        <div id="ende">
+            Vielen Dank für Ihre Antworten, jetzt fehlt nur noch ein letzter Schritt: 
+            <a href="#" class="transfer" style="margin-left: 25px;">Fragebogen speichern</a>
+        </div>
     </body>
-
-    
 </html>
 

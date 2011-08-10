@@ -1,38 +1,140 @@
+<!DOCTYPE HTML>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Cuprum" />
+<meta http-equiv="Content-Type" content="text/html;charset=UTF-8" />
+<title>COCEO – Fragebogen</title>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="underscore.js"></script>
 <script type="text/javascript" src="backbone.js"></script>
 
 <script type="text/javascript">
 
-var Sidebar = Backbone.Model.extend({
-  promptColor: function() {
-    var cssColor = prompt("Please enter a CSS color:");
-    this.set({color: cssColor});
-  }
-});
-
-var sidebar = new Sidebar({name: "MyName"})
-sidebar.bind("change:color", function(model, color) {
-    $("#sidebar").css({background: color})
-})
-
-$(document).ready(function() {
-  sidebar.promptColor()
-  alert(sidebar.get("name"))
+var Question = Backbone.Model.extend({
+    defaults: {
+        overviewTitle: ""
+    }
 })
 
 
 
+var Questions = Backbone.Collection.extend({
+    model: Question,
+    comparator: function(question) {
+        return question.get("cid")
+    }
+})
+
+var questions = new Questions([
+    new Question({overviewTitle: "Ihr Geschlecht"}),
+    new Question({overviewTitle: "Ihr Alter"}),
+    new Question({overviewTitle: "Ihr Wohnort"})
+])
 
 
-
+$.ready(function() {
+    
+})
 
 </script>
 
-<html>
+<style type="text/css">
+body {
+    padding: 0px;
+    margin: 0px;
+    background: #6D7A8D;
+    font-family: "Cuprum";
+    color:#333;
+    font-size: 18px;
+}
+#panel {
+    width: 1000px;
+    height:500px;
+    margin: 0 auto;
+}
+#overview {
+    float:left;
+    width: 210px;
+    padding: 50px 0px 0px 20px;
+}
+#questions {
+    float:left;
+    width: 750px;
+    min-height:500px;
+    padding: 10px;
+}
+#answers {
+    margin: 30px 0px 30px 0px;
+    line-height: 150%;
+}
+#questions span {
+    display: block;
+    font-size:0.8em;
+    color:#333;
+}
+#questions h1 {
+    display: inline-block;
+    font-size:1.6em;
+    text-shadow: 1px 0px 1px #ccc;
+    font-variant: small-caps; 
+    color:#333;
+    margin:0px;
+    padding:0px;
+}
+#questions a {
+    display: inline-block;
+    padding: 2px 12px 2px 12px;
+    -moz-border-radius: 3px;
+    -webkit-border-radius: 3px;
+    text-shadow: 1px 0px 2px #fff;
+    text-decoration: none; 
+    text-align: center; 
+    background: #ffc;
+    color:#333;
+}
 
-    <div id="sidebar">
-        sidebar
+h2 {
+    font-size: 1em;
+    font-variant: small-caps;
+}
+#overview ul {
+    list-style: none;
+    margin: 0px;
+    padding: 0px;
+}
+#overview ul a {
+    display: block;
+    font-size:0.9em;
+    text-decoration: none;
+    color:#ccc;
+    padding:5px 2px 5px 2px;
+    border-top: 1px solid #ccc;
+}
+#overview ul li:last-child a {
+    border-bottom: 1px solid #ccc;
+}
+</style> 
+
+</head>
+    <body>
+    <div id="panel">
+        <div id="questions">
+            <span>Frage 1</span>
+            <h1>Ihr Geschlecht?</h1>
+            <div id="answers">
+                <input type="radio" id="q1_geschlecht_w" name="q1_geschlecht" value="w" /> <label for="q1_geschlecht_w">Weiblich</label> <br/>
+                <input type="radio" id="q1_geschlecht_m" name="q1_geschlecht" value="m" /> <label for="q1_geschlecht_m">Männlich</label>
+            </div>
+            <a href="#">Weiter →</a>
+        </div>
+        <div id="overview">
+            <h2>Fragen – Überblick</h2>
+            <ul>
+                <li><a href="#">Ihr Geschlecht</a></li>
+                <li><a href="#">Ihr Alter</a></li>
+            </ul>
+        </div>
     </div>
-
+    </body>
 </html>

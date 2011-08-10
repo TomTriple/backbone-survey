@@ -1,0 +1,38 @@
+<script type="text/javascript" src="jquery.js"></script>
+<script type="text/javascript" src="underscore.js"></script>
+<script type="text/javascript" src="backbone.js"></script>
+
+<script type="text/javascript">
+
+var Sidebar = Backbone.Model.extend({
+  promptColor: function() {
+    var cssColor = prompt("Please enter a CSS color:");
+    this.set({color: cssColor});
+  }
+});
+
+var sidebar = new Sidebar({name: "MyName"})
+sidebar.bind("change:color", function(model, color) {
+    $("#sidebar").css({background: color})
+})
+
+$(document).ready(function() {
+  sidebar.promptColor()
+  alert(sidebar.get("name"))
+})
+
+
+
+
+
+
+
+</script>
+
+<html>
+
+    <div id="sidebar">
+        sidebar
+    </div>
+
+</html>

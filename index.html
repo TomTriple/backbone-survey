@@ -11,8 +11,6 @@
 
 <script type="text/javascript">
 
-(function() {
-
     var Question = Backbone.Model.extend({
         defaults: {
             title: "",
@@ -61,8 +59,13 @@
         },
         weiter: function() {
             var cur = this.collection.current()
-            if(! cur.get("validInput").call())
-                return
+            if(! cur.get("validInput").call()) {
+                $("#message").fadeIn("fast")
+                setTimeout(function() {
+                    $("#message").fadeOut()
+                }, 1500)
+                return;
+            }
             cur.set({serializedResult: $("#resultsform").serialize(), silent: true})
             if(this.collection.lastQuestion()) {
                 this.collection.ix += 1
@@ -198,7 +201,7 @@
         Backbone.history.start()
     })
 
-})();
+
 
 
 
@@ -264,6 +267,28 @@ a {
     color:#333;
     margin:0px;
     padding:0px;
+}
+#message {
+    display: none;
+    padding-top: 150px;
+    position: absolute;
+    z-index: 10;
+    width: 100%;
+    height: 560px;
+}
+#message div {
+    margin: 0 auto;
+    width: 500px;
+    height: 120px;
+    background:#fff;
+    opacity: 0.8;
+    text-align:center;
+    padding-top: 80px;
+    box-shadow: 0 0 0.3em #000;
+    -moz-box-shadow: 0 0 0.3em #000;
+    -webkit-box-shadow: 0 0 0.3em #000;
+    -moz-border-radius: 3px;
+    -webkit-border-radius: 3px;
 }
 a.weiter, a.transfer {
     display: inline-block;
@@ -481,6 +506,11 @@ h2 {
 
 </head>
     <body>
+        <div id="message">
+            <div>
+                Bitte beantworte erst die aktuelle Frage!
+            </div>
+        </div>
         <div id="start" style="display:block;">
             Herzlich Willkommen bei der Umfrage zu "COCEO – the way you like it"! <br />
             <span style="font-size:0.7em;color:#999">
@@ -501,7 +531,7 @@ h2 {
                 <form id="resultsform">
                 <div id="answers"></div>
                 </form>
-                <a class="weiter" style="cursor:pointer">Nächste Frage →</a>
+                <a class="weiter" style="cursor:pointer">Zur nächsten Frage →</a>
             </div>
             <div id="overview">
                 <h2>Fragen – Überblick</h2>

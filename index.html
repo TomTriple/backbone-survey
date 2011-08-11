@@ -19,7 +19,19 @@
             done: false,
             sort: -1,
             templateString: undefined,
-            serializedResult: ""
+            serializedResult: "",
+            validInput: function() {
+                return true 
+            }
+        },
+        initialize: function() {
+            this.set({sort: Question.nextSort(), silent: true})
+        }
+    }, {
+        sort: 0,
+        nextSort: function() {
+            this.sort += 1
+            return this.sort
         }
     })
 
@@ -41,15 +53,17 @@
         initialize: function() {
             var th = this
             this.collection.bind("change:done", function(value) {
-                th.render()
+                // th.render()
             })
-            this.render()
         },
         events: {
             "click a.weiter": "weiter"
         },
         weiter: function() {
-            this.collection.current().set({serializedResult: $("#resultsform").serialize(), silent: true})
+            var cur = this.collection.current()
+            if(! cur.get("validInput").call())
+                return
+            cur.set({serializedResult: $("#resultsform").serialize(), silent: true})
             if(this.collection.lastQuestion()) {
                 this.collection.ix += 1
                 this.renderOverview()
@@ -58,7 +72,7 @@
                 var current = this.collection.current()
                 this.collection.ix += 1
                 current.set({done: true})
-                router.navigate("/question/" + this.collection.ix, true)
+                router.navigate("/question/" + (this.collection.ix+1), true)
             }
         },
         render: function() {
@@ -84,41 +98,20 @@
             "/question/:id": "question",
             "/umfrage-starten": "umfrageStarten",
             "/ende": "ende",
-            "/danke": "danke"
+            "/danke": "danke",
+            "": "start"
         },
         question: function(id) {
-            id -= 1
-            if(id == 0) {
-                $("#umfrage-starten").hide()
-                $("#panel").show()
-                questions = new Questions([
-                    new Question({title: "Ihr Geschlecht?", sort: 1}),
-                    new Question({title: "Ihr Alter?",  sort: 2}),
-                    new Question({title: "Ihr Wohnort?", sort: 3}),
-                    new Question({title: "Ihr Beruf?", sort: 4}),
-                    new Question({title: "Sind Sie Internet-User?", sort: 5}),
-                    new Question({title: "Gastronomie-Nutzung?", sort: 6}),
-                    new Question({title: "Wie aufgeschlossen sind Sie gegenüber Neuem?", sort: 7}),
-                    new Question({title: "Haben Sie einen Coffee-Shop (z.B: McCafé, Strabucks, CoffeeFellows usw.) in Ihrer Nähe?", sort: 8}),
-                    new Question({title: "Wie würden Sie Ihren Kaffee-Konsum beschreiben?", sort: 9}),
-                    new Question({title: "Mit welchen Speisen kombinieren Sie Kaffee am liebsten?", sort: 10}),
-                    new Question({title: "Welche Möglichkeiten haben Sie im Alltag Kaffee zu konsumieren?", sort: 11}),
-                    new Question({title: "Wie viel Zeit sind Sie bereit für eine Online-Bestellung maximal aufzubringen?", sort: 12}),
-                    new Question({title: "Wie routiniert ist Ihr Alltags-Ablauf? (1 sehr routiniert, 5 jeder Tag anders)", sort: 13}),
-                    new Question({title: "Wie wichtig sind Ihnen Hintergrund-Informationen zu bestellten Produkten? (1 sehr wichtig, 5 unwichtig)", sort: 14}),
-                    new Question({title: "Nutzen Sie ein Smartphone?", sort: 15}),
-                    new Question({title: "Wie wichtig ist es Ihnen die Bestandteile Ihres Kaffees selbst zu wählen? (1 sehr wichtig, 5 unwichtig)", sort: 16}),
-                    new Question({title: "Wie gestalten Sie Pausen in Ihrem Alltag/Job?", sort: 17}),
-                    new Question({title: "Sie wollen sich nicht selbst etwas zubereiten, welchen Dienst nehmen Sie in Anspruch?", sort: 18}),
-                    new Question({title: "Aus welchem Grund trinken Sie Kaffee?", sort: 19}),
-                    new Question({title: "Haben Sie Interesse an einer Kaffee-Probe (analog zur Weinprobe)?", sort: 20}),
-                    new Question({title: "Würden Sie unter Zeitdruck per Schnellbestellung (z.B. wie “one click”) online etwas bestellen?", sort: 21}),
-                ])
-
-                var panelView = new PanelView({el: $("#panel"), collection: questions})
-            }
+            questions.ix = id - 1
+            questions.current().set({done: false})
+            $("#start").hide()
+            $("#ende").hide()
+            $("#umfrage-starten").hide()
+            $("#panel").show()
+            panelView.render()
         },
         umfrageStarten: function() {
+            $("#panel").hide()
             $("#start").hide()
             $("#umfrage-starten").show()
         },
@@ -134,13 +127,74 @@
             })
         },
         danke: function() {
+            $("#start").hide()
             $("#ende").hide()
             $("#danke").show()
+        },
+        start: function() {
+            $("#umfrage-starten").hide()
+            $("#start").show() 
         }
     })
 
     $(function() {
         router = new Router()
+        questions = new Questions([
+            new Question({title: "Ihr Geschlecht?", validInput: function() {
+                return $("input[name='q1_geschlecht']:checked").length > 0
+            }}),
+            new Question({title: "Ihr Alter?", validInput: function() {
+                return $("input[name='q2_alter']:checked").length > 0
+            }}),
+            new Question({title: "Ihr Wohnort?", validInput: function() {
+                return $("input[name='q3_wohnort']:checked").length > 0
+            }}),
+            new Question({title: "Ihr Beruf?", validInput: function() {
+                return $("input[name='q4_beruf']:checked").length > 0
+            }}),
+            new Question({title: "Sind Sie Internet-User?", validInput: function() {
+                return $("input[name='q5_internet']:checked").length > 0
+            }}),
+            new Question({title: "Gastronomie-Nutzung?", validInput: function() {
+                return $("input[name='q6_gastronomie']:checked").length > 0
+            }}),
+            new Question({title: "Wie aufgeschlossen sind Sie gegenüber Neuem?", validInput: function() {
+                return $("input[name='q7_aufgeschlossen']:checked").length > 0
+            }}),
+            new Question({title: "Haben Sie einen Coffee-Shop (z.B: McCafé, Strabucks, CoffeeFellows usw.) in Ihrer Nähe?", validInput: function() {
+                return $("input[name='q8_nah']:checked").length > 0
+            }}),
+            new Question({title: "Wie würden Sie Ihren Kaffee-Konsum beschreiben?", validInput: function() {
+                return $("input[name='q9_konsum']:checked").length > 0
+            }}),
+            new Question({title: "Mit welchen Speisen kombinieren Sie Kaffee am liebsten?"}),
+            new Question({title: "Welche Möglichkeiten haben Sie im Alltag Kaffee zu konsumieren?"}),
+            new Question({title: "Wie viel Zeit sind Sie bereit für eine Online-Bestellung maximal aufzubringen?", validInput: function() {
+                return $("input[name='q12_bestelldauer']:checked").length > 0
+            }}),
+            new Question({title: "Wie routiniert ist Ihr Alltags-Ablauf? (1 sehr routiniert, 5 jeder Tag anders)", validInput: function() {
+                return $("input[name='q13_routine']:checked").length > 0
+            }}),
+            new Question({title: "Wie wichtig sind Ihnen Hintergrund-Informationen zu bestellten Produkten? (1 sehr wichtig, 5 unwichtig)", validInput: function() {
+                return $("input[name='q14_hintergrundinfos']:checked").length > 0
+            }}),
+            new Question({title: "Nutzen Sie ein Smartphone?", validInput: function() {
+                return $("input[name='q15_smartphone']:checked").length > 0 
+            }}),
+            new Question({title: "Wie wichtig ist es Ihnen die Bestandteile Ihres Kaffees selbst zu wählen? (1 sehr wichtig, 5 unwichtig)", validInput: function() {
+                return $("input[name='q16_bestandteile']:checked").length > 0
+            }}),
+            new Question({title: "Wie gestalten Sie Pausen in Ihrem Alltag/Job?"}),
+            new Question({title: "Sie wollen sich nicht selbst etwas zubereiten, welchen Dienst nehmen Sie in Anspruch?"}),
+            new Question({title: "Aus welchem Grund trinken Sie Kaffee?"}),
+            new Question({title: "Haben Sie Interesse an einer Kaffee-Probe (analog zur Weinprobe)?", validInput: function() {
+                return $("input[name='q20_kaffeeprobe']:checked").length > 0
+            }}),
+            new Question({title: "Würden Sie unter Zeitdruck per Schnellbestellung (z.B. wie “one click”) online etwas bestellen?", validInput: function() {
+                return $("input[name='q21_zeitdruck']:checked").length > 0 
+            }}),
+        ]) 
+        panelView = new PanelView({el: $("#panel"), collection: questions})
         Backbone.history.start()
     })
 
@@ -417,7 +471,7 @@ h2 {
 
 <script type="text/template" id="template-overview">
     <% _.each(questions, function(q) { %>
-        <% if(q.done) { %>
+        <% if((index+1) > q.sort) { %>
             <li><span style="color:#ccc;" href="#"><%= "✓ " + q.sort + ". " + (q.title.length >= 30 ? q.title.substring(0, 27)+"..." : q.title) %></span></li>
         <% } else { %>
             <li><span href="#" style="<%= (index+1) === q.sort ? "color:#333" : "normal" %>"><%= "→ " + q.sort + ". " + (q.title.length >= 30 ? q.title.substring(0, 27)+"..." : q.title) %></span></li>
@@ -447,7 +501,7 @@ h2 {
                 <form id="resultsform">
                 <div id="answers"></div>
                 </form>
-                <a href="#" class="weiter">Nächste Frage →</a>
+                <a class="weiter" style="cursor:pointer">Nächste Frage →</a>
             </div>
             <div id="overview">
                 <h2>Fragen – Überblick</h2>

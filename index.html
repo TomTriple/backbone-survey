@@ -11,6 +11,8 @@
 
 <script type="text/javascript">
 
+(function() {
+
     var Question = Backbone.Model.extend({
         defaults: {
             title: "",
@@ -19,7 +21,7 @@
             templateString: undefined,
             serializedResult: "",
             validInput: function() {
-                return true 
+                return true
             }
         },
         initialize: function() {
@@ -119,27 +121,35 @@
             $("#umfrage-starten").show()
         },
         ende: function() {
+            $("#danke").hide()
+            $("#start").hide()
             $("#panel").hide()
             $("#ende").show()
             $("#ende a.transfer").click(function(e) {
                 var result = questions.reduce(function(acc, it) { return acc + it.get("serializedResult")+"&" }, "")
+                router.navigate("/danke", true) 
                 $.post("/save.php", result, function(xxx) {
-                    alert(xxx)
-                    router.navigate("/danke", true)
+                    if(xxx === "ok")
+                        ;
+                    else
+                        alert("Leider ist ein Fehler aufgetreten!")
                 })
             })
         },
         danke: function() {
+            $("#umfrage-starten").hide()
             $("#start").hide()
             $("#ende").hide()
             $("#danke").show()
         },
         start: function() {
             $("#umfrage-starten").hide()
-            $("#start").show() 
+            $("#start").show()
         }
     })
 
+
+    var router, questions, panelView;
     $(function() {
         router = new Router()
         questions = new Questions([
@@ -182,7 +192,7 @@
                 return $("input[name='q14_hintergrundinfos']:checked").length > 0
             }}),
             new Question({title: "Nutzen Sie ein Smartphone?", validInput: function() {
-                return $("input[name='q15_smartphone']:checked").length > 0 
+                return $("input[name='q15_smartphone']:checked").length > 0
             }}),
             new Question({title: "Wie wichtig ist es Ihnen die Bestandteile Ihres Kaffees selbst zu wählen? (1 sehr wichtig, 5 unwichtig)", validInput: function() {
                 return $("input[name='q16_bestandteile']:checked").length > 0
@@ -194,17 +204,15 @@
                 return $("input[name='q20_kaffeeprobe']:checked").length > 0
             }}),
             new Question({title: "Würden Sie unter Zeitdruck per Schnellbestellung (z.B. wie “one click”) online etwas bestellen?", validInput: function() {
-                return $("input[name='q21_zeitdruck']:checked").length > 0 
+                return $("input[name='q21_zeitdruck']:checked").length > 0
             }}),
-        ]) 
+        ])
         panelView = new PanelView({el: $("#panel"), collection: questions})
         Backbone.history.start()
     })
 
 
-
-
-
+})();
 
 </script>
 
@@ -276,7 +284,7 @@ a {
     width: 100%;
     height: 560px;
 }
-#message div {
+#message > div {
     margin: 0 auto;
     width: 500px;
     height: 120px;
@@ -517,10 +525,10 @@ h2 {
                 Diese Umfrage ist Teil der Bachelorarbeit von Sarah Berthold
             </span>
             <br /><br /><br /><br />
-            <a href="#/umfrage-starten">Zum Umfrage</a>
+            <a href="#/umfrage-starten">Zur Umfrage</a>
         </div>
         <div id="umfrage-starten">
-            Eines vorneweg: Viele Dank bereits im voraus für Deine Mithilfe! 
+            Eines vorneweg: Vielen Dank bereits im voraus für Deine Mithilfe!
              <br /><br /><br /><br />
             <a href="#/question/1">Umfrage jetzt starten</a>
         </div>
@@ -542,7 +550,7 @@ h2 {
         <div id="ende">
             Vielen Dank für Deine Antworten, jetzt fehlt nur noch ein letzter Schritt:
             <br /><br /><br /><br />
-            <a href="#" class="transfer" style="margin-left: 25px;">Fragebogen speichern</a>
+            <a class="transfer" style="margin-left: 25px;cursor:pointer;">Fragebogen speichern</a>
         </div>
         <div id="danke">
             So, das war´s – vielen Dank für Deine Mithilfe! 

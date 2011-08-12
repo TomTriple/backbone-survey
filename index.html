@@ -86,7 +86,6 @@
                 $("#questions h1").html(current.get("title") + "<br /><span>" + current.get("hints") + "</span>")
             else
                 $("#questions h1").html(current.get("title"))
-
             if(current.get("templateString") === undefined) {
                 current.set({templateString: _.template($("#template-a" + index).html()).call(), silent: true})
             }
@@ -274,11 +273,12 @@ a {
     width: 1000px;
     height:500px;
     margin: 0 auto;
+    margin-top: 30px;
 }
 #overview {
     float:left;
     width: 210px;
-    padding: 20px 0px 0px 20px;
+    padding: 0px 0px 0px 20px;
 }
 #questions {
     float:left;
@@ -301,7 +301,7 @@ a {
     font-weight:normal;
 }
 h1 {
-    font-size:1.8em;
+    font-size:1.6em;
     text-shadow: 2px 0px 1px #B2B6BD;
     font-weight: 700;
     color:#333;
@@ -325,7 +325,7 @@ h1 {
     width: 500px;
     height: 120px;
     background:#fff;
-    opacity: 0.8;
+    opacity: 0.9;
     text-align:center;
     padding-top: 80px;
     box-shadow: 0 0 0.3em #000;
@@ -492,14 +492,14 @@ h2 {
     <input type="radio" id="q8_nah_2" name="q8_nah" value="ja_nein" /><label for="q8_nah_2">Nein</label>
     <br /> 
     Begründung:<br />
-    <textarea name="q8_nah_grund1"></textarea>
+    <textarea name="q8_nah_grund1" style="height:50px;"></textarea>
 
     <strong>Wenn nein, hätten Sie gern ein solches Angebot?</strong>
     <input type="radio" id="q8_nah_3" name="q8_nah" value="nein_ja" /><label for="q8_nah_3">Ja</label>
     <input type="radio" id="q8_nah_4" name="q8_nah" value="nein_nein" /><label for="q8_nah_4">Nein</label> 
     <br />
     Begründung:<br />
-    <textarea name="q8_nah_grund2"></textarea>
+    <textarea name="q8_nah_grund2" style="height: 50px;"></textarea>
 </script>
 
 <script type="text/template" id="template-a14">
@@ -607,6 +607,7 @@ Dauer ca: 10 min.
         </div>
         <div id="panel">
             <div id="questions">
+                <img src="/img/coceo_logo.png" style="width:200px;margin-bottom: 20px;" />
                 <span></span>
                 <h1></h1>
                 <form id="resultsform">

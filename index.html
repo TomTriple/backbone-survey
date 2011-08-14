@@ -58,7 +58,7 @@
             })
         },
         events: {
-            "click a.weiter": "weiter"
+            "mouseup a.weiter": "weiter"
         },
         weiter: function() {
             var cur = this.collection.current()
@@ -177,7 +177,8 @@
     var enteredViaStartpage = false 
     $(function() {
         router = new Router()
-        questions = new Questions([
+        questions = new Questions(
+        [
             new Question({title: "Ihr Geschlecht?", validInput: function() {
                 return $("input[name='q1_geschlecht']:checked").length > 0
             }}),
@@ -196,7 +197,7 @@
             new Question({title: "Nutzen Sie ein Smartphone?", validInput: function() {
                 return $("input[name='q15_smartphone']:checked").length > 0
             }}),
-            new Question({title: "Gastronomie-Nutzung?", validInput: function() {
+            new Question({title: "Wie häufig nutzen Sie die Gastronomie?", validInput: function() {
                 return $("input[name='q6_gastronomie']:checked").length > 0
             }}),
             new Question({title: "Wie aufgeschlossen sind Sie gegenüber Neuem?", hints: "(1 sehr aufgeschlossen, 5 nicht aufgeschlossen)", validInput: function() {
@@ -234,7 +235,7 @@
             }}),
             new Question({title: "Würden Sie unter Zeitdruck per \"Schnellbestellung\" (Bestelldauer unter 1 Minute) online etwas bestellen?", validInput: function() {
                 return $("input[name='q21_zeitdruck']:checked").length > 0
-            }}),
+            }})
         ])
         panelView = new PanelView({el: $("#panel"), collection: questions})
         Backbone.history.start()
@@ -273,7 +274,7 @@ a {
     width: 1000px;
     height:500px;
     margin: 0 auto;
-    margin-top: 30px;
+    padding-top: 30px;
 }
 #overview {
     float:left;
@@ -315,6 +316,7 @@ h1 {
     display: none;
     padding-top: 150px;
     position: absolute;
+    left: 0px;
     top: 0px; 
     z-index: 10;
     width: 100%;
@@ -378,7 +380,7 @@ h2 {
     display: block;
     font-size:0.6em;
     text-decoration: none;
-    color:#999;
+    color:#bbb;
     padding:5px 2px 5px 2px;
     border-top: 1px solid #999;
 }
@@ -394,6 +396,14 @@ h2 {
     height:80px;
 }
 </style> 
+
+<!--[if IE 7]>
+<style type="text/css">
+#overview ul span {
+  padding: 2px;
+}
+</style>
+<![endif]-->
 
 <script type="text/template" id="template-a0">
     <input type="radio" id="q1_geschlecht_w" name="q1_geschlecht" value="w" /><label for="q1_geschlecht_w">Weiblich</label> <br/>
